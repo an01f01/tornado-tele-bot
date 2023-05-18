@@ -22,15 +22,17 @@ def tel_parse_message(message):
     print("message-->",message)
     try:
         chat_id = message['message']['chat']['id']
+        msg_id = message['message']['id']
         txt = message['message']['text']
         print("chat_id-->", chat_id)
+        print("msg_id-->", msg_id)
         print("txt-->", txt)
-        return chat_id,txt
+        return chat_id,msg_id,txt
     except:
         print("NO text found-->>")
  
 def tel_send_message(chat_id, text):
-    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
     payload = {
         'chat_id': chat_id,
         'text': text
@@ -83,13 +85,16 @@ class BotHandler(BaseHandler):
     @gen.coroutine
     def post(self, **params):
         msg         = self.request.body.decode('utf-8')
+        print(msg)
         bot_json    = tornado.escape.json_decode(msg)
+        print(bot_json)
         try:
-            chat_id, txt = tel_parse_message(bot_json)
+            chat_id, msg_id, txt = tel_parse_message(bot_json)
             if txt == "hi":
                 tel_send_message(chat_id,"Hello, world!")
             else:
-                tel_send_message(chat_id, 'from webhook')
+                tel_send_message(chat_id, 'from webhook')                
+                bot.sendMessage(chat_id=chat_id, text=txt, reply_to_message_id=msg_id)
         except:
             print("from index-->")
 
