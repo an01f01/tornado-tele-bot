@@ -12,6 +12,8 @@ from tornado import gen, web, template
 import requests
 import telegram
 
+from mastermind import get_response
+
 BOT_TOKEN = os.environ['TELE_BOT']
 BOT_URL = os.environ['TELE_BOT_URL']
 bot = telegram.Bot(token=BOT_TOKEN)
@@ -88,6 +90,21 @@ class BotHandler(BaseHandler):
         print(msg)
         bot_json    = tornado.escape.json_decode(msg)
         print(bot_json)
+        
+        # retrieve the message in JSON and then transform it to Telegram object
+        update = telegram.Update.de_json(bot_json, bot)
+
+        chat_id = update.message.chat.id
+        msg_id = update.message.message_id
+
+        # Telegram understands UTF-8, so encode text for unicode compatibility
+        text = update.message.text.encode('utf-8').decode()
+        print("got text message :", text)
+
+        response = get_response(text)
+        bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+
+        """
         try:
             chat_id, msg_id, txt = tel_parse_message(bot_json)
             if txt == "hi":
@@ -97,6 +114,7 @@ class BotHandler(BaseHandler):
                 bot.sendMessage(chat_id=chat_id, text=txt, reply_to_message_id=msg_id)
         except:
             print("from index-->")
+        """
 
         self.set_status(200)
         self.finish('Ok')
