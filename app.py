@@ -85,7 +85,7 @@ class BotHandler(BaseHandler):
     POST handler for telegram message in json
     """
     @gen.coroutine
-    async def post(self, **params):
+    def post(self, **params):
         msg         = self.request.body.decode('utf-8')
         print(msg)
         bot_json    = tornado.escape.json_decode(msg)
@@ -105,7 +105,8 @@ class BotHandler(BaseHandler):
             print("got text message :", txt)
 
             response = get_response(txt)
-            res = yield bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+            #res = yield bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+            res = bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
             print(res)
 
             self.set_status(200)
