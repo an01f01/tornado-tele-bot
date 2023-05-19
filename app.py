@@ -1,24 +1,55 @@
 import os
-import requests
-from flask import Flask
+import re
+from flask import Flask, request
+import telegram
+
+
+global bot
+global TOKEN
+global BOT_URL
+TOKEN = os.environ['TELE_BOT']
+BOT_URL = os.environ['TELE_BOT_URL']
+bot = telegram.Bot(token=os.environ['TELE_BOT'])
 
 app = Flask(__name__)
 
+def get_response(msg):
+    """
+    you can place your mastermind AI here
+    could be a very basic simple response like "معلش"
+    or a complex LSTM network that generate appropriate answer
+    """
+    return "معلش !"
+
+@app.route(f'/{0}'.format(TOKEN), methods=['POST'])
+def respond():
+    # retrieve the message in JSON and then transform it to Telegram object
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
+
+    chat_id = update.message.chat.id
+    msg_id = update.message.message_id
+
+    # Telegram understands UTF-8, so encode text for unicode compatibility
+    text = update.message.text.encode('utf-8').decode()
+    print("got text message :", text)
+
+    response = get_response(text)
+    bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+
+    return 'ok'
+
+@app.route('/setwebhook', methods=['GET', 'POST'])
+def set_webhook():
+    s = bot.setWebhook(f'{0}/{1}'.format(BOT_URL, TOKEN))
+    if s:
+        return "webhook setup ok"
+    else:
+        return "webhook setup failed"
+
 @app.route('/')
-def get_info(word):
-    url = 'https://api.dictionaryapi.dev/api/v2/entries/en/{}'.format(word)
-    response = requests.get(url)
-    # return a custom response if an invalid word is provided
-    if response.status_code == 404:
-        error_response = 'We are not able to provide any information about your word. Please confirm that the word is ' \
-                         'spelled correctly or try the search again at a later time.'
-        return error_response
-    data = response.json()[0]
-    print(data)
-    return data
+def index():
+    return '.'
 
-get_info("food")
 
-if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    app.run(threaded=True)
