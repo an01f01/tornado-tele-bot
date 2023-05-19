@@ -20,6 +20,18 @@ bot = telegram.Bot(token=BOT_TOKEN)
 
 tornado.options.define('port', default='8000', help='REST API Port', type=int)
 
+def get_info(word):
+    url = f'https://api.dictionaryapi.dev/api/v2/entries/en/{0}'.format(word)
+    response = requests.get(url)
+    # return a custom response if an invalid word is provided
+    if response.status_code == 404:
+        error_response = 'We are not able to provide any information about your word. Please confirm that the word is ' \
+                         'spelled correctly or try the search again at a later time.'
+        return error_response
+    data = response.json()[0]
+    print(data)
+    return data
+
 def tel_parse_message(message):
     print("message-->",message)
     try:
@@ -144,19 +156,17 @@ class WordHandler(BaseHandler):
     """
     @gen.coroutine
     def get(self, **params):
-        url = 'https://api.dictionaryapi.dev/api/v2/entries/en/{}'.format(params['token'])
-        response = requests.get(url)
-        # return a custom response if an invalid word is provided
-        if response.status_code == 404:
+        
+        try:
+            data = get_info(params['token'])
+            self.set_status(200)
+            self.write({'message': data})
+            self.finish()
+        except:
             error_response = 'We are not able to provide any information about your word. Please confirm that the word is ' \
                             'correctly spelt or try the search again at a later time.'
             self.set_status(200)
             self.write({'message': error_response})
-            self.finish()
-        else:
-            data = response.json()[0]
-            self.set_status(200)
-            self.write({'message': data})
             self.finish()
     
 

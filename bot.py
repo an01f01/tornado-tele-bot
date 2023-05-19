@@ -2,7 +2,7 @@ import os
 import telegram
 from telegram.ext import Updater, MessageHandler, Filters
 from telegram.ext import CommandHandler
-from fapp import get_info
+from tapp import get_info
 
 telegram_bot_token = os.environ['TELE_BOT']
 telegram_bot_url = os.environ['TELE_BOT_URL']
