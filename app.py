@@ -103,11 +103,20 @@ class BotHandler(BaseHandler):
             # Telegram understands UTF-8, so encode text for unicode compatibility
             #text = update.message.text.encode('utf-8').decode()
             print("got text message :", txt)
-
-            response = get_response(txt)
-            #res = yield bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
-            res = bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
-            print(res)
+            if txt == "/start":
+                # print the welcoming message
+                bot_welcome = """
+                Welcome to coolAvatar bot, the bot is using the service from http://avatars.adorable.io/ to generate cool looking avatars based on the name you enter so please enter a name and the bot will reply with an avatar for your name.
+                """
+                # send the welcoming message
+                bot.sendChatAction(chat_id=chat_id, action="typing")
+                sleep(1.5)
+                bot.sendMessage(chat_id=chat_id, text=bot_welcome, reply_to_message_id=msg_id)
+            else:
+                response = get_response(txt)
+                #res = yield bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+                res = bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+                print(res)
 
             self.set_status(200)
             self.finish('Ok')
