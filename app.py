@@ -13,9 +13,9 @@ import telebot
 API_TOKEN = os.environ['TELE_BOT']
 WEBHOOK_HOST = os.environ['TELE_BOT_URL']
 WEBHOOK_SECRET = "setwebhook"
-WEBHOOK_PORT = 88
+WEBHOOK_PORT = 8000
 #WEBHOOK_URL_BASE = f"https://{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
-WEBHOOK_URL_BASE = "{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
+WEBHOOK_URL_BASE = "{0}/{1}".format(WEBHOOK_HOST, WEBHOOK_SECRET)
 
 
 tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
