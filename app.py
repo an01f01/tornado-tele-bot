@@ -85,24 +85,36 @@ class BotHandler(BaseHandler):
     POST handler for telegram message in json
     """
     @gen.coroutine
-    def post(self, **params):
+    async def post(self, **params):
         msg         = self.request.body.decode('utf-8')
         print(msg)
         bot_json    = tornado.escape.json_decode(msg)
         print(bot_json)
         
         # retrieve the message in JSON and then transform it to Telegram object
-        update = telegram.Update.de_json(bot_json, bot)
+        #update = telegram.Update.de_json(bot_json, bot)
+        print("updated...")
+        #chat_id = update.message.chat.id
+        #msg_id = update.message.message_id
+        try:
+            chat_id, msg_id, txt = tel_parse_message(bot_json)
+            print(f"{0}: {1}".format(chat_id, msg_id))
 
-        chat_id = update.message.chat.id
-        msg_id = update.message.message_id
+            # Telegram understands UTF-8, so encode text for unicode compatibility
+            #text = update.message.text.encode('utf-8').decode()
+            print("got text message :", txt)
 
-        # Telegram understands UTF-8, so encode text for unicode compatibility
-        text = update.message.text.encode('utf-8').decode()
-        print("got text message :", text)
+            response = get_response(txt)
+            res = yield bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+            print(res)
 
-        response = get_response(text)
-        bot.sendMessage(chat_id=chat_id, text=response, reply_to_message_id=msg_id)
+            self.set_status(200)
+            self.finish('Ok')
+            
+        except:
+            print("from index-->")
+            self.set_status(400)
+            self.finish('Error')
 
         """
         try:
@@ -116,8 +128,6 @@ class BotHandler(BaseHandler):
             print("from index-->")
         """
 
-        self.set_status(200)
-        self.finish('Ok')
 
 def make_app():
     settings = dict(
