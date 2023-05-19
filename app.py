@@ -1,25 +1,112 @@
 import os
-import requests
-from flask import Flask
+import signal
+import asyncio
+from typing import Optional, Awaitable
 
-app = Flask(__name__)
+import tornado.httpserver
+import tornado.ioloop
+import tornado.options
+import tornado.web
+
+import telebot
+
+API_TOKEN = os.environ['TELE_BOT']
+WEBHOOK_HOST = os.environ['TELE_BOT_URL']
+WEBHOOK_SECRET = "setwebhook"
+WEBHOOK_PORT = 8000
+WEBHOOK_URL_BASE = "https://{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
+
+# Quick'n'dirty SSL certificate generation:
+#
+# openssl genrsa -out pkey.pem 2048
+# openssl req -new -x509 -days 3650 -key pkey.pem -out cert.pem
+#
+# When asked for "Common Name (e.g. server FQDN or YOUR name)" you should reply
+# with the same value in you put in WEBHOOK_HOST
+
+bot = telebot.TeleBot(API_TOKEN)
 
 
-@app.route('/')
-def get_info(word):
-    url = 'https://api.dictionaryapi.dev/api/v2/entries/en/{}'.format(word)
-    response = requests.get(url)
-    # return a custom response if an invalid word is provided
-    if response.status_code == 404:
-        error_response = 'We are not able to provide any information about your word. Please confirm that the word is ' \
-                         'spelled correctly or try the search again at a later time.'
-        return error_response
-    data = response.json()[0]
-    print(data)
-    return data
+class Root(tornado.web.RequestHandler):
+    def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
+        pass
 
-get_info("food")
+    def get(self):
+        self.write("Hi! This is webhook example!")
+        self.finish()
 
-if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+
+class WebhookServ(tornado.web.RequestHandler):
+    def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
+        pass
+
+    def get(self):
+        self.write("What are you doing here?")
+        self.finish()
+
+    def post(self):
+        if "Content-Length" in self.request.headers and \
+            "Content-Type" in self.request.headers and \
+            self.request.headers['Content-Type'] == "application/json":
+
+            # length = int(self.request.headers['Content-Length'])
+            json_data = self.request.body.decode("utf-8")
+            update = telebot.types.Update.de_json(json_data)
+            bot.process_new_updates([update])
+            self.write("")
+            self.finish()
+        else:
+            self.write("What are you doing here?")
+            self.finish()
+
+
+tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
+is_closing = False
+
+
+def signal_handler(signum, frame):
+    global is_closing
+    print("Exiting...")
+    is_closing = True
+
+
+def try_exit():
+    global is_closing
+    if is_closing:
+        # clean up here
+        tornado.ioloop.IOLoop.instance().stop()
+        print("Exit success!")
+
+
+# Handle '/start' and '/help'
+@bot.message_handler(commands=['help', 'start'])
+def send_welcome(message):
+    bot.reply_to(message,
+                 ("Hi there, I am EchoBot.\n"
+                  "I am here to echo your kind words back to you."))
+
+
+def make_app():
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL_BASE)
+    signal.signal(signal.SIGINT, signal_handler)
+    settings = dict(
+        cookie_secret=str(os.urandom(45)),
+        template_path=os.path.join(os.path.dirname(__file__), "templates"),
+        static_path=os.path.join(os.path.dirname(__file__), "static"),
+        default_handler_class=ErrorHandler,
+        default_handler_args=dict(status_code=404)
+    )
+    return tornado.web.Application([
+            (r"/", Root),
+            (r"/" + WEBHOOK_SECRET, WebhookServ)
+        ], **settings)
+
+async def main():
+    print("starting tornado server..........")
+    app = make_app()
+    app.listen(tornado.options.options.port)
+    await asyncio.Event().wait()
+
+if __name__ == '__main__':
+    asyncio.run(main())

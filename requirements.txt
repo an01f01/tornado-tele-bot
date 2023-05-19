@@ -2,3 +2,4 @@ tornado>=6.2
 python-telegram-bot
 requests
 flask
+telebot
