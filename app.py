@@ -138,6 +138,27 @@ class BotHandler(BaseHandler):
             print("from index-->")
         """
 
+class WordHandler(BaseHandler):
+    """
+    GET handler for fetching numbers from database
+    """
+    @gen.coroutine
+    def get(self, **params):
+        url = 'https://api.dictionaryapi.dev/api/v2/entries/en/{}'.format(params['token'])
+        response = requests.get(url)
+        # return a custom response if an invalid word is provided
+        if response.status_code == 404:
+            error_response = 'We are not able to provide any information about your word. Please confirm that the word is ' \
+                            'correctly spelt or try the search again at a later time.'
+            self.set_status(200)
+            self.write({'message': error_response})
+            self.finish()
+        else:
+            data = response.json()[0]
+            self.set_status(200)
+            self.write({'message': data})
+            self.finish()
+    
 
 def make_app():
     settings = dict(
@@ -149,7 +170,7 @@ def make_app():
     )
     return tornado.web.Application([
         (r"/", BotHandler),
-        (r"/(?P<token>[^\/]+)", BotHandler),
+        (r"/(?P<token>[^\/]+)", WordHandler),
         (r"/bot/setwebhook", WebhookHandler),
         ], **settings)
 
