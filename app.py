@@ -13,8 +13,9 @@ import telebot
 API_TOKEN = os.environ['TELE_BOT']
 WEBHOOK_HOST = os.environ['TELE_BOT_URL']
 WEBHOOK_SECRET = "setwebhook"
-WEBHOOK_PORT = 8000
-WEBHOOK_URL_BASE = "https://{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
+WEBHOOK_PORT = 88
+#WEBHOOK_URL_BASE = f"https://{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
+WEBHOOK_URL_BASE = "{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
 
 
 tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
@@ -29,8 +30,24 @@ tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port
 
 bot = telebot.TeleBot(API_TOKEN)
 
+class BaseHandler(tornado.web.RequestHandler):
+    """
+    Base handler gonna to be used instead of RequestHandler
+    """
+    def write_error(self, status_code, **kwargs):
+        if status_code in [403, 404, 500, 503]:
+            self.write('Error %s' % status_code)
+        else:
+            self.write('BOOM!')
 
-class Root(tornado.web.RequestHandler):
+class ErrorHandler(tornado.web.ErrorHandler, BaseHandler):
+    """
+    Default handler gonna to be used in case of 404 error
+    """
+    pass
+
+
+class Root(BaseHandler):
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
         pass
 
@@ -39,7 +56,7 @@ class Root(tornado.web.RequestHandler):
         self.finish()
 
 
-class WebhookServ(tornado.web.RequestHandler):
+class WebhookServ(BaseHandler):
     def data_received(self, chunk: bytes) -> Optional[Awaitable[None]]:
         pass
 
@@ -73,6 +90,7 @@ def send_welcome(message):
 
 def make_app():
     bot.remove_webhook()
+    print(WEBHOOK_URL_BASE)
     bot.set_webhook(url=WEBHOOK_URL_BASE)
     #signal.signal(signal.SIGINT, signal_handler)
     settings = dict(
