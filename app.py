@@ -16,6 +16,9 @@ WEBHOOK_SECRET = "setwebhook"
 WEBHOOK_PORT = 8000
 WEBHOOK_URL_BASE = "https://{0}:{1}/{2}".format(WEBHOOK_HOST, str(WEBHOOK_PORT), WEBHOOK_SECRET)
 
+
+tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
+
 # Quick'n'dirty SSL certificate generation:
 #
 # openssl genrsa -out pkey.pem 2048
@@ -60,24 +63,6 @@ class WebhookServ(tornado.web.RequestHandler):
             self.finish()
 
 
-tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
-is_closing = False
-
-
-def signal_handler(signum, frame):
-    global is_closing
-    print("Exiting...")
-    is_closing = True
-
-
-def try_exit():
-    global is_closing
-    if is_closing:
-        # clean up here
-        tornado.ioloop.IOLoop.instance().stop()
-        print("Exit success!")
-
-
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
@@ -89,7 +74,7 @@ def send_welcome(message):
 def make_app():
     bot.remove_webhook()
     bot.set_webhook(url=WEBHOOK_URL_BASE)
-    signal.signal(signal.SIGINT, signal_handler)
+    #signal.signal(signal.SIGINT, signal_handler)
     settings = dict(
         cookie_secret=str(os.urandom(45)),
         template_path=os.path.join(os.path.dirname(__file__), "templates"),
