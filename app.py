@@ -20,14 +20,6 @@ WEBHOOK_URL_BASE = "{0}/{1}".format(WEBHOOK_HOST, WEBHOOK_SECRET)
 
 tornado.options.define("port", default=WEBHOOK_PORT, help="run on the given port", type=int)
 
-# Quick'n'dirty SSL certificate generation:
-#
-# openssl genrsa -out pkey.pem 2048
-# openssl req -new -x509 -days 3650 -key pkey.pem -out cert.pem
-#
-# When asked for "Common Name (e.g. server FQDN or YOUR name)" you should reply
-# with the same value in you put in WEBHOOK_HOST
-
 bot = telebot.TeleBot(API_TOKEN)
 
 class BaseHandler(tornado.web.RequestHandler):
