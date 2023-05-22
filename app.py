@@ -86,15 +86,15 @@ def greet(message):
 
 def dict_definition(message):
     request = message.text.split()
-    if len(request) < 2 or request[0].lower() not in "price":
+    if len(request) < 2: #or request[0].lower() not in "price":
         return False
     else:
         return True
 
-
 @bot.message_handler(func=dict_definition)
 def vocab_def(message):
     print(f"message: {message}")
+    bot.send_message(message.chat.id, f"message: {message.text}")
 
 
 def make_app():
